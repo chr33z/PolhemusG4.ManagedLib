@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="FrameOfReference.h" />
     <ClInclude Include="NativeTrackingDevice.h" />
     <ClInclude Include="OrientationUnits.h" />
     <ClInclude Include="PNOFrame.h" />

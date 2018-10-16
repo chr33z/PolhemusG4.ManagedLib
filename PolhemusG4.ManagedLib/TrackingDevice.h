@@ -6,6 +6,7 @@
 #pragma managed
 #include "msclr\marshal_cppstd.h"
 #include "PNOFrame.h"
+#include "FrameOfReference.h"
 #include "PositionUnits.h"
 #include "OrientationUnits.h"
 
@@ -47,6 +48,7 @@ namespace PolhemusG4 {
 				return tracker->Connect();
 			}
 
+
 			/*
 				Disconnect from a G4 hub. If false is returned, query the last device response for more information.
 			*/
@@ -59,6 +61,15 @@ namespace PolhemusG4 {
 				return marshal_as<String^>(info);
 			}
 
+			/*
+				Return the last result string from the tracking device. This string can for example contain error messages
+			*/
+			String^ GetLastResultString() {
+				return gcnew String(tracker->GetLastResultString().c_str());
+			}
+
+#pragma region Position and Orientation
+
 			bool SetPNOPositionUnits(PositionUnits unit) {
 				return tracker->SetPNOPositionUnits((NativePositionUnits)unit);
 			}
@@ -70,6 +81,62 @@ namespace PolhemusG4 {
 			bool ResetPNOPositionUnits() {
 				return tracker->ResetPNOPositionUnits();
 			}
+
+			bool SetPNOOrientationUnits(OrientationUnits unit) {
+				return tracker->SetPNOOrientationUnits((NativeOrientationUnits)unit);
+			}
+
+			NativeOrientationUnits GetPNOOrientationUnits() {
+				return (NativeOrientationUnits)tracker->GetPNOOrientationUnits();
+			}
+
+			bool ResetPNOOrientationUnits() {
+				return tracker->ResetPNOOrientationUnits();
+			}
+
+			void SetCommandPositionUnits(PositionUnits unit) {
+				tracker->SetCommandPositionUnits((NativePositionUnits)unit);
+			}
+
+			void SetCommandOrientationUnits(OrientationUnits unit) {
+				tracker->SetCommandOrientationUnits((NativeOrientationUnits)unit);
+			}
+
+			bool SetFrameOfReference(FrameOfReference frameOfReference) {  
+				NativeFrameOfReference nativeFOR;
+
+				nativeFOR.x = frameOfReference.x;
+				nativeFOR.y = frameOfReference.y;
+				nativeFOR.z = frameOfReference.z;
+				nativeFOR.r1 = frameOfReference.r1;
+				nativeFOR.r2 = frameOfReference.r2;
+				nativeFOR.r3 = frameOfReference.r3;
+				nativeFOR.r4 = frameOfReference.r4;
+
+				return tracker->SetFrameOfReference(nativeFOR);
+			}
+
+			FrameOfReference GetFrameOfReference() {
+				NativeFrameOfReference nativeFOR = tracker->GetFrameOfReference();
+
+				FrameOfReference frameOfReference = FrameOfReference();
+
+				if (nativeFOR.valid) {
+					frameOfReference.x = nativeFOR.x;
+					frameOfReference.y = nativeFOR.y;
+					frameOfReference.z = nativeFOR.z;
+					frameOfReference.r1 = nativeFOR.r1;
+					frameOfReference.r2 = nativeFOR.r2;
+					frameOfReference.r3 = nativeFOR.r3;
+					frameOfReference.r4 = nativeFOR.r4;
+					frameOfReference.valid = true;
+				}
+				return frameOfReference;
+			}
+
+#pragma endregion
+
+#pragma region Reading Frames
 
 			List<PNOFrame>^ ReadSinglePNOFrame() {
 				vector<NativePNOFrame*>* frames = tracker->ReadSinglePNOFrame();
@@ -85,6 +152,25 @@ namespace PolhemusG4 {
 
 				return managedFrames;
 			}
+
+			bool SetIncrement(int hubID, int sensorID, float positionIncrement, float orientationIncrement) {
+				return tracker->SetIncrement(hubID, sensorID, positionIncrement, orientationIncrement, false);
+			}
+
+			bool GetIncrement(int hubID, int sensorID, [Out] float^% positionIncrement, [Out] float^% orientationIncrement) {
+				// TODO test this! 
+				
+				float posInc;
+				float oriInc;
+				bool result = tracker->GetIncrement(hubID, sensorID, posInc, oriInc);
+
+				positionIncrement = posInc;
+				orientationIncrement = oriInc;
+
+				return result;
+			}
+
+#pragma endregion
 
 		private:
 			PNOFrame ConvertToManagedFrame(NativePNOFrame* nativeFrame) {

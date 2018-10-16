@@ -39,6 +39,19 @@ struct NativePNOFrame {
 	float r4;
 };
 
+struct NativeFrameOfReference {
+	float x;
+	float y;
+	float z;
+
+	float r1;
+	float r2;
+	float r3;
+	float r4;
+
+	bool valid;
+};
+
 class NativeTrackingDevice
 {
 public:
@@ -48,12 +61,6 @@ public:
 	CPDIg4 tracker;
 
 	bool isConnected;
-
-	TCHAR sourceConfigurationFilePath[MAX_PATH + 1];
-
-	NativeOrientationUnits orientationUnits;
-
-	NativePositionUnits positionUnits;
 
 private:
 	byte g_pMotionBuf[BUFFER_SIZE];
@@ -69,6 +76,12 @@ private:
 	int lastHostFrameCount = 0;
 
 	bool continousPollingRunning = false;
+
+	NativeOrientationUnits orientationUnits;
+
+	NativePositionUnits positionUnits;
+
+	TCHAR sourceCalibrationFilePath[MAX_PATH + 1];
 
 public:
 	/*
@@ -94,19 +107,61 @@ public:
 	*/
 	string GetTrackerInformation();
 
+	string GetLastResultString();
+
+	string GetSourceCalibrationFilePath();
+
+	// =================================
+	// Setting Position and Orientation
+
 	bool SetPNOPositionUnits(NativePositionUnits unit);
 
 	NativePositionUnits GetPNOPositionUnits();
 
 	bool ResetPNOPositionUnits();
 
-	//void SetPNOOrientationUnits();
+	bool SetPNOOrientationUnits(NativeOrientationUnits units);
 
-	//void GetPNOOrientationUnits();
+	NativeOrientationUnits GetPNOOrientationUnits();
 
-	//void ResetPNOOrientationUnits();
+	bool ResetPNOOrientationUnits();
+
+	void SetCommandPositionUnits(NativePositionUnits units);
+
+	void SetCommandOrientationUnits(NativeOrientationUnits units);
+
+	bool SetFrameOfReference(NativeFrameOfReference frameOfReference);
+
+	NativeFrameOfReference GetFrameOfReference();
+
+	bool ResetFrameOfReference();
+
+	// END: Setting Position and Orientation
+
+	// =================================
+	// Reading Frames
 
 	std::vector<NativePNOFrame*>* ReadSinglePNOFrame();
+
+	/*
+		New Frames are only reported when the position and orientation changes exceed the chosen increments
+
+		Params:
+			int hubID
+			int sensorID
+			float positionIncrement: 0 disables increment, -1 sets auto-increment
+			float orientationIncrement: 0 disables increment, -1 sets auto-increment
+			bool readSensorsAsBitmap: inteprete sensorID as a bitmap (for multi configuration)
+	*/
+	bool SetIncrement(int hubID, int sensorID, float positionIncrement, float orientationIncrement, bool readSensorsAsBitmap);
+
+	/*
+		Read the increment values for a specific hub and sensor
+	*/
+	bool GetIncrement(int hubID, int sensorID, float& positionIncrement, float& orientationIncrement);
+
+	// END: Reading Frames
+
 
 	//void GetStationMap();
 
@@ -114,7 +169,8 @@ public:
 
 	//void GetSystemSensorMap();
 
-	string GetLastResultString();
+
+
 
 private:
 	std::vector<NativePNOFrame*>* ParseG4NativeFrame(PBYTE buffer, DWORD size);

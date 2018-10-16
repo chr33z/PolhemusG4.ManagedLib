@@ -17,7 +17,7 @@ bool NativeTrackingDevice::Initialize(string calibrationFilePath)
 	memset(&m_stamap[0], 0, sizeof(UINT64)*G4_STAMAP_BLOCK_COUNT);
 
 	const char* file = calibrationFilePath.c_str();
-	_tcsncpy_s(sourceConfigurationFilePath, _countof(sourceConfigurationFilePath), file, _tcslen(file));
+	_tcsncpy_s(sourceCalibrationFilePath, _countof(sourceCalibrationFilePath), file, _tcslen(file));
 
 	return true;
 }
@@ -25,7 +25,7 @@ bool NativeTrackingDevice::Initialize(string calibrationFilePath)
 bool NativeTrackingDevice::Connect()
 {
 	if (!tracker.CnxReady()) {
-		if (tracker.ConnectG4(sourceConfigurationFilePath))
+		if (tracker.ConnectG4(sourceCalibrationFilePath))
 		{
 			isConnected = true;
 			return true;
@@ -104,9 +104,104 @@ bool NativeTrackingDevice::ResetPNOPositionUnits()
 	}
 }
 
+bool NativeTrackingDevice::SetPNOOrientationUnits(NativeOrientationUnits units)
+{
+	if (tracker.CnxReady()) {
+		return tracker.SetPNOOriUnits((ePDIoriUnits)units);
+	}
+	return false;
+}
+
+NativeOrientationUnits NativeTrackingDevice::GetPNOOrientationUnits()
+{
+	if (tracker.CnxReady()) {
+		ePDIoriUnits units;
+		if (tracker.GetPNOOriUnits(units)) {
+			return (NativeOrientationUnits)units;
+		}
+	}
+}
+
+bool NativeTrackingDevice::ResetPNOOrientationUnits()
+{
+	if (tracker.CnxReady()) {
+		return tracker.ResetPNOOriUnits();
+	}
+	else {
+		return false;
+	}
+}
+
 string NativeTrackingDevice::GetLastResultString()
 {
 	return string(tracker.GetLastResultStr());
+}
+
+string NativeTrackingDevice::GetSourceCalibrationFilePath()
+{
+	return sourceCalibrationFilePath;
+}
+
+NativeFrameOfReference NativeTrackingDevice::GetFrameOfReference()
+{
+	NativeFrameOfReference frameOfReference;
+
+	if (tracker.CnxReady()) {
+		PDI7vec vec7;
+		tracker.GetFrameOfRef(vec7);
+
+		frameOfReference.x = vec7[0];
+		frameOfReference.y = vec7[1];
+		frameOfReference.z = vec7[2];
+		frameOfReference.r1 = vec7[3];
+		frameOfReference.r2 = vec7[4];
+		frameOfReference.r3 = vec7[5];
+		frameOfReference.r4 = vec7[6];
+
+		frameOfReference.valid = true;
+	}
+
+	return frameOfReference;
+}
+
+bool NativeTrackingDevice::SetFrameOfReference(NativeFrameOfReference frameOfReference)
+{
+	if (tracker.CnxReady()) {
+		PDI7vec v;
+
+		v[0] = frameOfReference.x;
+		v[1] = frameOfReference.y;
+		v[2] = frameOfReference.z;
+		v[3] = frameOfReference.r1;
+		v[4] = frameOfReference.r2;
+		v[5] = frameOfReference.r3;
+		v[6] = frameOfReference.r4;
+
+		return tracker.SetFrameOfRef(v);
+	}
+	return false;
+}
+
+bool NativeTrackingDevice::ResetFrameOfReference()
+{
+	if (tracker.CnxReady()) {
+		return tracker.ResetFrameOfRef();
+	}
+	return false;
+}
+
+void NativeTrackingDevice::SetCommandPositionUnits(NativePositionUnits units)
+{
+	if (tracker.CnxReady()) {
+		tracker.SetCmdPosUnits((ePDIposUnits)units);
+	}
+}
+
+void NativeTrackingDevice::SetCommandOrientationUnits(NativeOrientationUnits units)
+{
+	if (tracker.CnxReady()) {
+		tracker.SetCmdOriUnits((ePDIoriUnits)units);
+	}
 }
 
 std::vector<NativePNOFrame*>* NativeTrackingDevice::ReadSinglePNOFrame()
@@ -126,6 +221,22 @@ std::vector<NativePNOFrame*>* NativeTrackingDevice::ReadSinglePNOFrame()
 }
 
 // Private Methods
+
+bool NativeTrackingDevice::SetIncrement(int hubID, int sensorID, float positionIncrement, float orientationIncrement, bool readSensorsAsBitmap)
+{
+	if (tracker.CnxReady()) {
+		return tracker.SetSIncrement(hubID, sensorID, positionIncrement, orientationIncrement, readSensorsAsBitmap);
+	}
+	return false;
+}
+
+bool NativeTrackingDevice::GetIncrement(int hubID, int sensorID, float & positionIncrement, float & orientationIncrement)
+{
+	if (tracker.CnxReady()) {
+		return tracker.GetSIncrement(hubID, sensorID, positionIncrement, orientationIncrement);
+	}
+	return false;
+}
 
 vector<NativePNOFrame*>* NativeTrackingDevice::ParseG4NativeFrame(PBYTE buffer, DWORD size)
 {
