@@ -52,6 +52,12 @@ struct NativeFrameOfReference {
 	bool valid;
 };
 
+struct NativePDIvec3 {
+	float x;
+	float y;
+	float z;
+};
+
 class NativeTrackingDevice
 {
 public:
@@ -111,6 +117,12 @@ public:
 
 	string GetSourceCalibrationFilePath();
 
+	int GetActiveHubs(int* hubIDs);
+
+	int GetActiveSensorCount();
+
+	UINT32 GetHubSensorMap(int hub);
+
 	// =================================
 	// Setting Position and Orientation
 
@@ -135,6 +147,12 @@ public:
 	NativeFrameOfReference GetFrameOfReference();
 
 	bool ResetFrameOfReference();
+
+	bool SetTipOffset(int hub, int sensor, float x, float y, float z);
+
+	NativePDIvec3 GetTipOffset(int hub, int sensor);
+
+	bool ResetTipOffset(int hub, int sensor);
 
 	// END: Setting Position and Orientation
 
@@ -162,15 +180,9 @@ public:
 
 	// END: Reading Frames
 
-
 	//void GetStationMap();
 
-	//void GetActiveHubs();
-
 	//void GetSystemSensorMap();
-
-
-
 
 private:
 	std::vector<NativePNOFrame*>* ParseG4NativeFrame(PBYTE buffer, DWORD size);

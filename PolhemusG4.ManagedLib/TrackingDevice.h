@@ -6,6 +6,7 @@
 #pragma managed
 #include "msclr\marshal_cppstd.h"
 #include "PNOFrame.h"
+#include "PDIvec3.h"
 #include "FrameOfReference.h"
 #include "PositionUnits.h"
 #include "OrientationUnits.h"
@@ -66,6 +67,27 @@ namespace PolhemusG4 {
 			*/
 			String^ GetLastResultString() {
 				return gcnew String(tracker->GetLastResultString().c_str());
+			}
+
+			cli::array<Int32>^ GetActiveHubs() {
+				int hubIDs[G4_MAX_HUB_COUNT];
+				int hubCount = tracker->GetActiveHubs(hubIDs);
+
+				cli::array<Int32>^ managedHubIDs = gcnew cli::array<Int32>(hubCount);
+				for (size_t i = 0; i < hubCount; i++)
+				{
+					managedHubIDs[i] = hubIDs[i];
+				}
+
+				return managedHubIDs;
+			}
+
+			int GetActiveSensorCount() {
+				return tracker->GetActiveSensorCount();
+			}
+
+			UINT32 GetHubSensorMap(int hub) {
+				return tracker->GetHubSensorMap(hub);
 			}
 
 #pragma region Position and Orientation
@@ -132,6 +154,25 @@ namespace PolhemusG4 {
 					frameOfReference.valid = true;
 				}
 				return frameOfReference;
+			}
+
+			bool SetTipOffset(int hub, int sensor, float x, float y, float z) {
+				return tracker->SetTipOffset(hub, sensor, x, y, z);
+			}
+
+			PDIvec3 GetTipOffset(int hub, int sensor) {
+				NativePDIvec3 nativeTipOffset = tracker->GetTipOffset(hub, sensor);
+
+				PDIvec3 tipOffset = PDIvec3();
+				tipOffset.x = nativeTipOffset.x;
+				tipOffset.y = nativeTipOffset.y;
+				tipOffset.z = nativeTipOffset.z;
+
+				return tipOffset;
+			}
+
+			bool ResetTipOffset(int hub, int sensor) {
+				return tracker->ResetTipOffset(hub, sensor);
 			}
 
 #pragma endregion

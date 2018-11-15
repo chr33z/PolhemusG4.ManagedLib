@@ -142,6 +142,28 @@ string NativeTrackingDevice::GetSourceCalibrationFilePath()
 	return sourceCalibrationFilePath;
 }
 
+int NativeTrackingDevice::GetActiveHubs(int* hubIDs)
+{
+	int hubCount;
+	tracker.GetActiveHubs(hubCount, hubIDs);
+	return hubCount;
+}
+
+int NativeTrackingDevice::GetActiveSensorCount()
+{
+	int count;
+	tracker.GetActiveSensorCount(count);
+	return count;
+}
+
+UINT32 NativeTrackingDevice::GetHubSensorMap(int hub)
+{
+	DWORD map;
+	tracker.GetHubSensorMap(hub, map);
+
+	return map;
+}
+
 NativeFrameOfReference NativeTrackingDevice::GetFrameOfReference()
 {
 	NativeFrameOfReference frameOfReference;
@@ -202,6 +224,37 @@ void NativeTrackingDevice::SetCommandOrientationUnits(NativeOrientationUnits uni
 	if (tracker.CnxReady()) {
 		tracker.SetCmdOriUnits((ePDIoriUnits)units);
 	}
+}
+
+bool NativeTrackingDevice::SetTipOffset(int hub, int sensor, float x, float y, float z)
+{
+	if (tracker.CnxReady()) {
+		PDIpos position;
+		position[0] = x;
+		position[1] = y;
+		position[2] = z;
+
+		return tracker.SetSTipOffset(hub, sensor, position);
+	}
+	return false;
+}
+
+NativePDIvec3 NativeTrackingDevice::GetTipOffset(int hub, int sensor)
+{
+	PDI3vec v;
+	tracker.GetSTipOffset(hub, sensor, v);
+
+	NativePDIvec3 tipOffset;
+	tipOffset.x = v[0];
+	tipOffset.y = v[1];
+	tipOffset.z = v[2];
+
+	return tipOffset;
+}
+
+bool NativeTrackingDevice::ResetTipOffset(int hub, int sensor)
+{
+	return tracker.ResetSTipOffset(hub, sensor, false);
 }
 
 std::vector<NativePNOFrame*>* NativeTrackingDevice::ReadSinglePNOFrame()
